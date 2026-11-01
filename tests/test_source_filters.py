@@ -1,4 +1,5 @@
-from job_finder.fetchers import _apply_source_filters, make_job
+from job_finder.providers.filters import apply_source_filters as _apply_source_filters
+from job_finder.providers.models import make_job
 
 
 def _jobs():

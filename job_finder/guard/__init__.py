@@ -13,7 +13,7 @@ from __future__ import annotations
 import html
 import re
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from .html_text import extract_html, fold_block_text
 from .invisible import strip_invisible

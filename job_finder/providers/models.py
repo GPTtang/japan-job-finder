@@ -1,0 +1,72 @@
+"""Result types and the job record every provider produces."""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+from ..guard import guard
+from .text import extract_basic_skills
+
+
+@dataclass
+class FetchIssue:
+    provider: str
+    message: str
+    source_ref: str = ""
+    severity: str = "warning"
+    retryable: bool = False
+    details: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class FetchResult:
+    provider: str
+    jobs: List[Dict[str, Any]] = field(default_factory=list)
+    issues: List[FetchIssue] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        """True when the fetch completed without any error-severity issues.
+
+        An empty ``jobs`` list is *not* a failure — the source may simply have
+        no open positions right now.  Callers that care about emptiness should
+        check ``len(result.jobs) > 0`` separately.
+        """
+        return not any(i.severity == "error" for i in self.issues)
+
+
+def make_job(
+    *,
+    title: str,
+    company: str,
+    location: str = "",
+    url: str = "",
+    description: str = "",
+    source: str = "",
+    skills: Optional[List[str]] = None,
+    extract_skills: bool = False,
+    remote: Optional[bool] = None,
+    posted_date: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build a job record.
+
+    ``description`` may be raw HTML or text from an untrusted source: it passes
+    through the integrity gate, which stores the cleaned text and a verdict in
+    ``guard``. With ``extract_skills`` the skill list is read from that cleaned
+    text, so hidden keyword stuffing cannot inflate the match.
+    """
+    checked = guard(description)
+    if skills is None and extract_skills:
+        skills = extract_basic_skills(checked.text)
+    return {
+        "title": title or "",
+        "company": company or "",
+        "location": location or "",
+        "url": url or "",
+        "description": checked.text,
+        "source": source or "",
+        "skills": skills or [],
+        "remote": remote,
+        "posted_date": posted_date,
+        "guard": checked.verdict,
+    }
