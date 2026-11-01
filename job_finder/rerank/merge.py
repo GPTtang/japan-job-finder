@@ -11,6 +11,7 @@ from datetime import date
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from ..guard import guard_plain
+from .freshness import freshness_flags
 from .rubric import DIMENSIONS, GATE_VALUES, GATES, band, overall_score
 
 MAX_ITEMS = 3
@@ -113,16 +114,19 @@ def _flags(job: Mapping[str, Any], review: Mapping[str, Any]) -> List[str]:
     return flags
 
 
-def _item(job: Mapping[str, Any], review: Mapping[str, Any]) -> Dict[str, Any]:
+def _item(job: Mapping[str, Any], review: Mapping[str, Any], today: date) -> Dict[str, Any]:
     overall = overall_score(review["scores"])
     failed = [f"{gate}: {review['gate_notes'].get(gate) or '不满足'}"
               for gate, value in review["gates"].items() if value == "FAIL"]
+    expired, timing = freshness_flags(job.get("posted_date"), review["deadline"], today)
+    if expired:
+        failed.append(f"已过截止日 {review['deadline']}")
     item = {key: job.get(key) for key in _CARRIED}
     item.update(
         scores=review["scores"], overall=overall, band=band(overall), gates=review["gates"],
         gate_notes=review["gate_notes"],
         strengths=review["strengths"], gaps=review["gaps"], deadline=review["deadline"],
-        flags=_flags(job, review), excluded_reasons=failed,
+        flags=_flags(job, review) + timing, excluded_reasons=failed,
     )
     return item
 
@@ -152,8 +156,9 @@ def _collect(known: Mapping[str, Any], reviews: List[Any], issues: List[str]) ->
     return accepted
 
 
-def merge_reviews(packet: Mapping[str, Any], reviews: Any) -> Dict[str, Any]:
+def merge_reviews(packet: Mapping[str, Any], reviews: Any, today: Optional[date] = None) -> Dict[str, Any]:
     """Combine a review packet with reviewer output into ranked, excluded and unreviewed lists."""
+    today = today or date.today()
     jobs = {job["key"]: job for job in packet.get("jobs", [])}
     issues: List[str] = []
     items, problem = _unwrap(reviews)
@@ -163,7 +168,7 @@ def merge_reviews(packet: Mapping[str, Any], reviews: Any) -> Dict[str, Any]:
 
     ranked, excluded = [], []
     for key, review in accepted.items():
-        item = _item(jobs[key], review)
+        item = _item(jobs[key], review, today)
         (excluded if item["excluded_reasons"] else ranked).append(item)
     ranked.sort(key=lambda i: (-i["overall"], -(i["rule_score"] or 0), i["title"] or ""))
     excluded.sort(key=lambda i: (-i["overall"], i["title"] or ""))
