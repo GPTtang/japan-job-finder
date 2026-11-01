@@ -100,3 +100,33 @@ class TestValidateConfig:
         cfg = load_config("config/sources.example.json")
         errors, _ = validate_config(cfg)
         assert errors == []
+
+
+class TestProviderRegistryIsSingleSourceOfTruth:
+    def test_supported_providers_derive_from_registry(self):
+        from job_finder.config import SUPPORTED_PROVIDERS
+        from job_finder.providers import PROVIDERS
+
+        assert set(SUPPORTED_PROVIDERS) == set(PROVIDERS)
+        assert all(SUPPORTED_PROVIDERS[n] == list(p.required) for n, p in PROVIDERS.items())
+
+    def test_known_required_fields_unchanged(self):
+        from job_finder.config import SUPPORTED_PROVIDERS
+
+        assert SUPPORTED_PROVIDERS["greenhouse"] == ["token"]
+        assert SUPPORTED_PROVIDERS["lever"] == ["company"]
+        assert SUPPORTED_PROVIDERS["browser_site"] == ["url"]
+        assert SUPPORTED_PROVIDERS["tokyodev"] == []
+
+
+class TestEnabledFlag:
+    def _validate(self, source):
+        return validate_config({"sources": [source], "fetch_options": dict(DEFAULT_FETCH_OPTIONS)})
+
+    def test_enabled_false_is_accepted_without_warning(self):
+        errors, warnings = self._validate({"provider": "japan_dev", "enabled": False})
+        assert errors == [] and warnings == []
+
+    def test_enabled_must_be_boolean(self):
+        errors, _ = self._validate({"provider": "japan_dev", "enabled": "no"})
+        assert any("enabled" in e for e in errors)

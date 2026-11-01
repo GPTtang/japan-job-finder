@@ -76,6 +76,8 @@ def fetch_all(sources: Iterable[Dict[str, Any]], fetch_options: Dict[str, Any] |
     for source in sources:
         if isinstance(source, dict) and source and all(k.startswith("_") for k in source.keys()):
             continue
+        if isinstance(source, dict) and source.get("enabled") is False:
+            continue
         active_sources.append(source)
 
     if not active_sources:

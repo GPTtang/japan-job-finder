@@ -354,3 +354,19 @@ class TestModels:
     def test_make_job_defaults(self):
         job = make_job(title="", company="")
         assert job["skills"] == [] and job["remote"] is None and job["url"] == ""
+
+
+class TestEnabledFlag:
+    def test_disabled_source_is_skipped_without_network(self, monkeypatch):
+        calls = install_requests(monkeypatch, {"greenhouse.io": FakeResponse(json_data={"jobs": []})})
+        out = fetch_all([{"provider": "greenhouse", "token": "t", "enabled": False}], FAST)
+        assert out == {"jobs": [], "issues": []} and calls == []
+
+    def test_enabled_true_and_missing_both_run(self, monkeypatch):
+        calls = install_requests(monkeypatch, {"greenhouse.io": FakeResponse(json_data={"jobs": []})})
+        fetch_all([{"provider": "greenhouse", "token": "a", "enabled": True},
+                   {"provider": "greenhouse", "token": "b"}], {"max_concurrent_fetches": 1, **FAST})
+        assert len(calls) == 2
+
+    def test_only_disabled_sources_yield_empty_result(self):
+        assert fetch_all([{"provider": "japan_dev", "enabled": False}]) == {"jobs": [], "issues": []}
