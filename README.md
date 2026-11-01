@@ -100,6 +100,9 @@ Use `_`-prefixed keys as human-readable separators — they are silently ignored
 }
 ```
 
+### AI rerank & safety
+Optional two-stage ranking: rules prefilter, then Claude Code subagents score the top postings (no API key; falls back to rules). Fetched job text goes through a prompt-injection guard. See [docs/rerank.md](docs/rerank.md).
+
 ### Project layout
 
 ```
@@ -219,6 +222,9 @@ Claude 会自动调用技能，返回匹配排名报告。
 
 Claude 会直接输出一份针对你背景定制好的 `config/sources.json`，复制粘贴即可使用。
 
+### AI 精排与安全
+可选的两阶段排序：规则初筛后，由 Claude Code 子代理给前几名打分（无需 API Key，不可用时回退规则排序）。抓取的岗位文本会先经过提示注入防护。详见 [docs/rerank.md](docs/rerank.md)。
+
 ### 项目结构
 
 ```
@@ -329,6 +335,9 @@ Claude がスキルを自動で呼び出し、マッチング結果を返しま�
   ]
 }
 ```
+
+### AI 再ランキングと安全性
+任意の二段階ランキング：ルールで絞り込み後、Claude Code のサブエージェントが上位求人を採点します（API キー不要、使えない場合はルール順位に戻ります）。取得した求人文はプロンプトインジェクション対策を通します。詳細は [docs/rerank.md](docs/rerank.md)。
 
 ### プロジェクト構成
 
