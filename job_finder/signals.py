@@ -8,14 +8,20 @@ CHINESE_ADVANTAGE_SIGNALS = (
     "中国語", "chinese", "中文", "mandarin",
     "中国系", "中国人", "华人", "オフショア", "offshore",
     "bridge se", "ブリッジse", "ブリッジエンジニア",
-    "大連", "上海", "北京", "深圳", "沈阳",
-    "dalian", "shanghai", "beijing", "shenzhen",
+    # Offshore development hubs only: an office in Shanghai or Beijing says nothing about language.
+    "大連", "沈阳", "dalian",
 )
 
 BRIDGE_SE_SIGNALS = (
     "bridge se", "ブリッジse", "ブリッジエンジニア", "bridge engineer",
     "オフショア", "offshore", "中国語", "対中", "日中",
     "中国拠点", "中国チーム", "中国開発",
+)
+
+# Bridge cues that are not already a language cue, so one phrase never earns both bonuses.
+BRIDGE_ONLY_SIGNALS = tuple(
+    sig for sig in BRIDGE_SE_SIGNALS
+    if sig.lower() not in {c.lower() for c in CHINESE_ADVANTAGE_SIGNALS}
 )
 
 JLPT_REQUIREMENT_MAP = {

@@ -69,13 +69,27 @@ class TestScoreJob:
         without = score_job({**PROFILE, "is_chinese_speaker": False}, job)["match_score"]
         assert round(with_flag - without, 2) == 0.15
 
-    def test_chinese_term_double_counts_as_bridge_se_known_issue(self):
-        # "中国語" sits in both signal lists, so it earns +0.15 and +0.10.
-        # Characterisation of current behaviour; revisit when scoring is reworked.
-        job = _job(title="Engineer", location="Osaka", skills=[], description="中国語歓迎")
+    def _bonus(self, description):
+        job = _job(title="Engineer", location="Osaka", skills=[], description=description)
         with_flag = score_job(PROFILE, job)["match_score"]
         without = score_job({**PROFILE, "is_chinese_speaker": False}, job)["match_score"]
-        assert round(with_flag - without, 2) == 0.25
+        return round(with_flag - without, 2)
+
+    def test_shared_signal_is_counted_once(self):
+        # "中国語" is both a language cue and a Bridge SE cue; it must not earn both bonuses.
+        assert self._bonus("中国語歓迎") == 0.15
+
+    def test_bridge_specific_signal_earns_the_bridge_bonus(self):
+        assert self._bonus("対中ビジネスの窓口") == 0.10
+
+    def test_both_kinds_of_signal_stack(self):
+        assert self._bonus("中国語歓迎。対中ビジネスの窓口") == 0.25
+
+    def test_office_city_alone_is_not_a_chinese_language_signal(self):
+        assert self._bonus("本社は上海、北京、深圳にオフィスがあります") == 0.0
+
+    def test_offshore_hub_city_still_counts(self):
+        assert self._bonus("大連の開発センターと連携") == 0.15
 
     def test_jlpt_penalty_applied_when_job_requires_higher_level(self):
         job = _job(description="JLPT N1 required")

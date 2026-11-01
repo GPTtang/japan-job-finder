@@ -174,6 +174,7 @@ def merge_reviews(packet: Mapping[str, Any], reviews: Any) -> Dict[str, Any]:
     )
     return {
         "ranked": ranked, "excluded": excluded, "unreviewed": unreviewed, "issues": issues,
+        "fetch_issues": [i for i in packet.get("fetch_issues", []) if isinstance(i, dict)],
         "summary": {"total": len(jobs), "ranked": len(ranked), "excluded": len(excluded),
                     "unreviewed": len(unreviewed)},
     }

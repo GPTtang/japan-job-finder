@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 from .signals import (
+    BRIDGE_ONLY_SIGNALS,
     BRIDGE_SE_SIGNALS,
     CHINESE_ADVANTAGE_SIGNALS,
     JLPT_RANK,
@@ -139,7 +140,8 @@ def score_job(
 
     # ── Bonus: Bridge SE role (high value for bilingual candidates) ───
     is_bridge_se = _detect_bridge_se(job_text)
-    bridge_bonus = 0.10 if (is_chinese_speaker and is_bridge_se) else 0.0
+    bridge_specific = has_any_term(job_text, BRIDGE_ONLY_SIGNALS)
+    bridge_bonus = 0.10 if (is_chinese_speaker and bridge_specific) else 0.0
 
     # ── Bonus: priority company (user-specified or Chinese IT 乙方) ───
     is_priority, priority_boost, priority_label = _check_priority(job, priority_cfg or {})
