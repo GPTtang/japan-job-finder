@@ -1,4 +1,4 @@
-# tokyo_job_finder Skill
+# japan-job-finder
 
 [English](#english) | [中文](#中文) | [日本語](#日本語)
 
@@ -26,8 +26,8 @@ A job-matching Skill for Claude Code. Describe your background in natural langua
 ### Install
 
 ```bash
-git clone https://github.com/GPTtang/tokyo_job_finder_skill ~/.claude/skills/tokyo_job_finder
-cd ~/.claude/skills/tokyo_job_finder
+git clone https://github.com/GPTtang/japan-job-finder ~/.claude/skills/japan-job-finder
+cd ~/.claude/skills/japan-job-finder
 pip install -e .
 cp config/sources.example.json config/sources.json
 ```
@@ -46,7 +46,7 @@ Required for `browser_site` provider. Without it the skill falls back to static 
 Add the skill to your global Claude config:
 
 ```bash
-echo '\n@~/.claude/skills/tokyo_job_finder/SKILL.md' >> ~/.claude/CLAUDE.md
+echo '\n@~/.claude/skills/japan-job-finder/SKILL.md' >> ~/.claude/CLAUDE.md
 ```
 
 Then just talk to Claude:
@@ -137,8 +137,8 @@ SKILL.md                    Claude Code skill spec
 ### 安装
 
 ```bash
-git clone https://github.com/GPTtang/tokyo_job_finder_skill ~/.claude/skills/tokyo_job_finder
-cd ~/.claude/skills/tokyo_job_finder
+git clone https://github.com/GPTtang/japan-job-finder ~/.claude/skills/japan-job-finder
+cd ~/.claude/skills/japan-job-finder
 pip install -e .
 cp config/sources.example.json config/sources.json
 ```
@@ -157,7 +157,7 @@ playwright install chromium
 将技能加入全局 Claude 配置：
 
 ```bash
-echo '\n@~/.claude/skills/tokyo_job_finder/SKILL.md' >> ~/.claude/CLAUDE.md
+echo '\n@~/.claude/skills/japan-job-finder/SKILL.md' >> ~/.claude/CLAUDE.md
 ```
 
 之后直接和 Claude 说话即可：
@@ -215,7 +215,7 @@ Claude 会自动调用技能，返回匹配排名报告。
 
 把下面这段提示词发给 Claude：
 
-> 我是有 Python 经验、日语 N2 的后端工程师，中文母语，想在东京找对华人或英语友好的技术岗位（特别是 Bridge SE / 中国系 IT 公司）。请帮我生成 tokyo_job_finder 技能的 `sources.json`，包含 `gaijinpot`、`tokyodev`、`browser_site`、`company_site` 等 provider，针对 5～8 家合适的公司。
+> 我是有 Python 经验、日语 N2 的后端工程师，中文母语，想在东京找对华人或英语友好的技术岗位（特别是 Bridge SE / 中国系 IT 公司）。请帮我生成 japan-job-finder 技能的 `sources.json`，包含 `gaijinpot`、`tokyodev`、`browser_site`、`company_site` 等 provider，针对 5～8 家合适的公司。
 
 Claude 会直接输出一份针对你背景定制好的 `config/sources.json`，复制粘贴即可使用。
 
@@ -256,8 +256,8 @@ Claude Code 向けの求人マッチングスキル。自然言語で経歴を�
 ### インストール
 
 ```bash
-git clone https://github.com/GPTtang/tokyo_job_finder_skill ~/.claude/skills/tokyo_job_finder
-cd ~/.claude/skills/tokyo_job_finder
+git clone https://github.com/GPTtang/japan-job-finder ~/.claude/skills/japan-job-finder
+cd ~/.claude/skills/japan-job-finder
 pip install -e .
 cp config/sources.example.json config/sources.json
 ```
@@ -276,7 +276,7 @@ playwright install chromium
 `SKILL.md` を Claude Code が読めるようグローバル設定に追加：
 
 ```bash
-echo '\n@~/.claude/skills/tokyo_job_finder/SKILL.md' >> ~/.claude/CLAUDE.md
+echo '\n@~/.claude/skills/japan-job-finder/SKILL.md' >> ~/.claude/CLAUDE.md
 ```
 
 あとは Claude に話しかけるだけです：

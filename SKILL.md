@@ -1,4 +1,4 @@
-# job_finder
+# japan-job-finder
 
 ## Purpose
 Use this Skill to find currently relevant jobs for a user, compare those jobs against the user's background, and return a compact job-match report.

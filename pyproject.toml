@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "job-finder-skill"
+name = "japan-job-finder"
 version = "0.1.0"
 description = "A single-skill local job finder for Japan AI/LLM roles"
 readme = "README.md"
