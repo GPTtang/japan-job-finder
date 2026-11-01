@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
+from .rerank.batches import DEFAULT_BATCH_SIZE, write_batches
 from .rerank.merge import merge_reviews
 from .rerank.packet import DEFAULT_TOP_K, MAX_TOP_K
 from .rerank.profile import load_profile_json
@@ -73,6 +74,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Pretty-print JSON output.",
     )
     parser.add_argument(
+        "--batch-dir",
+        type=str,
+        help="With --output review: write packet.json and batch_N.md prompt files here and print a manifest.",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=_top_k,
+        default=DEFAULT_BATCH_SIZE,
+        help="Postings per reviewer prompt file (with --batch-dir).",
+    )
+    parser.add_argument(
         "--merge-reviews",
         type=str,
         help="Reviewer verdicts (JSON array file); merges them with --packet into the final report.",
@@ -133,10 +145,18 @@ def _run(args: argparse.Namespace) -> int:
     profile = load_profile_json(_read_text(args.profile_json)) if args.profile_json else None
     query = _read_query(args, profile)
 
+    if args.batch_dir and args.output != "review":
+        raise ValueError("--batch-dir 只能与 --output review 一起使用。")
     if args.output == "review":
         result = prepare_review(query, top_k=args.top_k, config_path=args.config, profile=profile)
-        _dump(result["packet"] if result.get("ok") else result, args.pretty)
-        return 0 if result.get("ok") else 1
+        if not result.get("ok"):
+            _dump(result, args.pretty)
+            return 1
+        if args.batch_dir:
+            _dump(write_batches(result["packet"], args.batch_dir, args.batch_size), args.pretty)
+        else:
+            _dump(result["packet"], args.pretty)
+        return 0
     if args.output == "json":
         payload = run_job_finder(query, top_n=args.top_n, config_path=args.config, profile=profile)
         _dump(payload, args.pretty)

@@ -151,3 +151,16 @@ class TestCliMerge:
 def test_job_key_in_packet_matches_merge_key(config_file, fake_fetch):
     packet = skill.prepare_review("Backend Engineer", config_path=config_file)["packet"]
     assert packet["jobs"][0]["key"] == job_key({**JOBS[0], "match_score": 0})
+
+
+class TestCliBatchDir:
+    def test_writes_packet_and_batches_and_prints_a_manifest(self, tmp_path, config_file, fake_fetch, capsys):
+        target = tmp_path / "run"
+        assert main(["Backend Engineer Tokyo", "--config", config_file, "--output", "review",
+                     "--batch-dir", str(target), "--batch-size", "2"]) == 0
+        manifest = json.loads(capsys.readouterr().out)
+        assert manifest["jobs"] == 3 and len(manifest["batches"]) == 2
+        assert (target / "packet.json").exists() and (target / "batch_1.md").exists()
+
+    def test_batch_dir_requires_review_output(self, tmp_path, config_file, capsys):
+        assert main(["q", "--config", config_file, "--batch-dir", str(tmp_path)]) == 2
