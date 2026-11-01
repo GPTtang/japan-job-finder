@@ -97,6 +97,26 @@ def _as_text(raw: object) -> str:
     return ""  # None, numbers, lists and dicts are not posting bodies
 
 
+def guard_plain(raw: object, label: str = "") -> GuardResult:
+    """Gate for short plain-text fields (title, company, location).
+
+    No HTML parsing, so ``Engineer <Tokyo>`` survives; invisible characters and
+    instruction-shaped phrases are still handled. ``label`` prefixes each excerpt.
+    """
+    scan = strip_invisible(_as_text(raw))
+    text = " ".join(scan.text.split())
+    findings: List[Finding] = []
+    if scan.flagged:
+        findings.append(Finding("invisible_chars", f"{scan.flagged} 个零宽/双向控制/标签字符"))
+    for payload in scan.decoded:
+        findings.append(Finding("invisible_text", _short(payload)))
+    for source in (text, " ".join(scan.spaced.split()) if scan.flagged else ""):
+        findings.extend(_instruction_findings(source, label))
+    for payload in scan.decoded:
+        findings.extend(_instruction_findings(payload, label or "不可见文本"))
+    return GuardResult(text=text, findings=tuple(dict.fromkeys(findings)))
+
+
 def guard(raw: object) -> GuardResult:
     """Clean ``raw`` into visible text and report anything suspicious about it."""
     scan = strip_invisible(_as_text(raw))
@@ -124,4 +144,4 @@ def guard(raw: object) -> GuardResult:
     return GuardResult(text=text, findings=tuple(dict.fromkeys(findings)))
 
 
-__all__ = ["guard", "GuardResult", "Finding"]
+__all__ = ["guard", "guard_plain", "GuardResult", "Finding", "MAX_INPUT_CHARS"]
