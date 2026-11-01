@@ -15,3 +15,8 @@ config/sources.json
 resume/*.pdf
 resume/*.docx
 resume/*.txt
+
+# Test artifacts
+.coverage
+.pytest_cache/
+htmlcov/
