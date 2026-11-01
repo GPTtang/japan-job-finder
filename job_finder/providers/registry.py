@@ -8,6 +8,8 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, NamedTuple, Opt
 from .ashby import fetch_ashby
 from .browser_site import fetch_browser_site
 from .company_site import fetch_company_site
+from .freehire import OPTIONAL_FIELDS as FREEHIRE_FIELDS
+from .freehire import fetch_freehire, validate_source as validate_freehire
 from .filters import apply_source_filters
 from .gaijinpot import fetch_gaijinpot
 from .greenhouse import fetch_greenhouse
@@ -24,6 +26,9 @@ class Provider(NamedTuple):
 
     required: Tuple[str, ...]
     fetch: Callable[[Mapping[str, Any], FetchOptions], FetchResult]
+    optional: Tuple[str, ...] = ()
+    # Returns (field, problem) pairs for settings this provider rejects.
+    validate: Optional[Callable[[Mapping[str, Any]], List[Tuple[str, str]]]] = None
 
 
 PROVIDERS: Mapping[str, Provider] = MappingProxyType({
@@ -39,6 +44,8 @@ PROVIDERS: Mapping[str, Provider] = MappingProxyType({
     "japan_dev": Provider((), lambda s, o: fetch_japan_dev(fetch_options=o)),
     "gaijinpot": Provider((), lambda s, o: fetch_gaijinpot(fetch_options=o)),
     "tokyodev": Provider((), lambda s, o: fetch_tokyodev(fetch_options=o)),
+    # Public JSON API over ~50 ATS platforms; defaults to Japan.
+    "freehire": Provider((), lambda s, o: fetch_freehire(s, o), FREEHIRE_FIELDS, validate_freehire),
 })
 
 

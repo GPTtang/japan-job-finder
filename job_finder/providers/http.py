@@ -9,6 +9,9 @@ import requests
 
 from .models import FetchIssue
 
+# owner/project/version, so a service operator can find the maintainer.
+USER_AGENT = "GPTtang/japan-job-finder/0.1"
+
 
 def http_get(
     url: str,
@@ -26,7 +29,7 @@ def http_get(
             response = requests.get(
                 url,
                 timeout=timeout_seconds,
-                headers={"User-Agent": "job-finder-skill/1.2"},
+                headers={"User-Agent": USER_AGENT},
             )
         except requests.RequestException as exc:
             retryable = attempt < attempts

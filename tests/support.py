@@ -29,19 +29,28 @@ class FakeResponse:
         return self._json
 
 
+class CallLog(list):
+    """List of requested URLs that also keeps the keyword arguments of each call."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.kwargs: List[Dict[str, Any]] = []
+
+
 Route = Union[FakeResponse, Exception, Callable[[], Union[FakeResponse, Exception]]]
 
 
-def install_requests(monkeypatch, routes: Dict[str, Route]) -> List[str]:
+def install_requests(monkeypatch, routes: Dict[str, Route]) -> CallLog:
     """Route ``requests.get`` by URL substring; returns the list of requested URLs.
 
     A route may be a response, an exception to raise, or a callable producing either
     (to script a different answer per attempt). Unrouted URLs answer 404.
     """
-    calls: List[str] = []
+    calls = CallLog()
 
     def fake_get(url, **kwargs):
         calls.append(url)
+        calls.kwargs.append(kwargs)
         for fragment, route in routes.items():
             if fragment in url:
                 outcome = route() if callable(route) else route

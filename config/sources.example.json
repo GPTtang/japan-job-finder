@@ -254,6 +254,17 @@
     },
 
     {
+      "_comment": "freehire.me：聚合约 50 个 ATS 的技术岗，公开 JSON API，无需浏览器，默认只查日本 | 第三方托管、无 SLA，故默认关闭",
+      "_comment2": "关键词与地点会自动取自你的描述（最多 5 个关键词以 OR 连接）；自托管可设环境变量 FREEHIRE_API_URL。改 enabled 为 true 启用",
+      "provider": "freehire",
+      "enabled": false,
+      "countries": ["JP"],
+      "limit": 30,
+      "pages": 1,
+      "posted_within_days": 30
+    },
+
+    {
       "_comment": "【推荐】Japan Dev：在日技术岗聚合平台 | browser_site=绕过Algolia客户端渲染",
       "_comment2": "⚡ browser_site 需要: pip install playwright && playwright install chromium",
       "provider": "browser_site",

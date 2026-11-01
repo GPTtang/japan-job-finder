@@ -162,10 +162,16 @@ def validate_config(config: Dict[str, Any]) -> Tuple[List[str], List[str]]:
         if "enabled" in source and not isinstance(source["enabled"], bool):
             errors.append(f"`sources[{i}].enabled` 必须是布尔值。")
 
+        provider_spec = PROVIDERS[provider]
+        if provider_spec.validate:
+            for field, problem in provider_spec.validate(source):
+                errors.append(f"`sources[{i}].{field}` {problem}")
+
         _validate_filters(source.get("filters"), i, errors, warnings)
 
         unknown_fields = sorted(
-            k for k in set(source.keys()) - set(required_fields) - {"provider", "filters", "enabled"}
+            k for k in set(source.keys()) - set(required_fields) - set(provider_spec.optional)
+            - {"provider", "filters", "enabled"}
             if not k.startswith("_")
         )
         if unknown_fields:
