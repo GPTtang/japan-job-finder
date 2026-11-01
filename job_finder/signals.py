@@ -27,7 +27,7 @@ JLPT_REQUIREMENT_MAP = {
     "日常会話": "N3", "conversational japanese": "N3",
 }
 
-JLPT_RANK = {"N1": 1, "N2": 2, "N3": 3, None: 99}
+JLPT_RANK = {"N1": 1, "N2": 2, "N3": 3, "N4": 4, "N5": 5, None: 99}
 
 _ASCII_TERM = re.compile(r"[a-z0-9 .+#-]+")
 
