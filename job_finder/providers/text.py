@@ -5,12 +5,21 @@ import re
 from html import unescape
 from typing import Any, Dict, List
 
+from ..signals import has_term
+
 
 def html_to_text(value: str) -> str:
     value = re.sub(r"<[^>]+>", " ", value or "")
     value = unescape(value)
     value = re.sub(r"\s+", " ", value).strip()
     return value
+
+
+def _mentions(text: str, skill: str) -> bool:
+    """Word-boundary match that also accepts a plural ("agents")."""
+    if has_term(text, skill):
+        return True
+    return skill[-1].isascii() and skill[-1].isalpha() and has_term(text, skill + "s")
 
 
 def extract_basic_skills(text: str) -> List[str]:
@@ -40,8 +49,8 @@ def extract_basic_skills(text: str) -> List[str]:
         # Microservices / Architecture
         "microservices", "マイクロサービス", "オフショア", "offshore",
     ]
-    text_l = (text or "").lower()
-    return [skill for skill in vocab if skill.lower() in text_l]
+    text = text or ""
+    return [skill for skill in vocab if _mentions(text, skill)]
 
 
 def job_text(job: Dict[str, Any]) -> str:
