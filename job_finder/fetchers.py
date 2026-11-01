@@ -11,6 +11,8 @@ from urllib.parse import urljoin
 
 import requests
 
+from .guard import guard
+
 
 # ---------------------------------------------------------------------------
 # Data classes — defined first so every function below can reference them
@@ -111,19 +113,31 @@ def make_job(
     description: str = "",
     source: str = "",
     skills: Optional[List[str]] = None,
+    extract_skills: bool = False,
     remote: Optional[bool] = None,
     posted_date: Optional[str] = None,
 ) -> Dict[str, Any]:
+    """Build a job record.
+
+    ``description`` may be raw HTML or text from an untrusted source: it passes
+    through the integrity gate, which stores the cleaned text and a verdict in
+    ``guard``. With ``extract_skills`` the skill list is read from that cleaned
+    text, so hidden keyword stuffing cannot inflate the match.
+    """
+    checked = guard(description)
+    if skills is None and extract_skills:
+        skills = _extract_basic_skills(checked.text)
     return {
         "title": title or "",
         "company": company or "",
         "location": location or "",
         "url": url or "",
-        "description": description or "",
+        "description": checked.text,
         "source": source or "",
         "skills": skills or [],
         "remote": remote,
         "posted_date": posted_date,
+        "guard": checked.verdict,
     }
 
 
@@ -390,9 +404,9 @@ def fetch_greenhouse(token: str, fetch_options: Dict[str, Any] | None = None) ->
             company=token,
             location=location_name,
             url=item.get("absolute_url", ""),
-            description=_html_to_text(content),
+            description=content,
             source=provider,
-            skills=_extract_basic_skills(content),
+            extract_skills=True,
             remote="remote" in location_name.lower(),
             posted_date=item.get("updated_at") or item.get("created_at"),
         ))
@@ -440,9 +454,9 @@ def fetch_lever(company: str, fetch_options: Dict[str, Any] | None = None) -> Fe
             company=company,
             location=location,
             url=item.get("hostedUrl", ""),
-            description=_html_to_text(raw_desc),
+            description=raw_desc,
             source=provider,
-            skills=_extract_basic_skills(raw_desc),
+            extract_skills=True,
             remote="remote" in location.lower(),
             posted_date=item.get("createdAt"),
         ))
@@ -484,9 +498,9 @@ def fetch_ashby(board: str, fetch_options: Dict[str, Any] | None = None) -> Fetc
             company=board,
             location=location,
             url=item.get("jobUrl", ""),
-            description=_html_to_text(desc),
+            description=desc,
             source=provider,
-            skills=_extract_basic_skills(desc),
+            extract_skills=True,
             remote="remote" in location.lower(),
             posted_date=item.get("publishedDate"),
         ))
@@ -666,9 +680,9 @@ def _extract_json_ld_jobpostings(html: str, base_url: str) -> List[Dict[str, Any
                     company=((item.get("hiringOrganization") or {}).get("name", "")),
                     location=(((item.get("jobLocation") or {}).get("address") or {}).get("addressLocality", "")),
                     url=base_url,
-                    description=_html_to_text(item.get("description", "")),
+                    description=item.get("description", ""),
                     source="company_site",
-                    skills=_extract_basic_skills(item.get("description", "")),
+                    extract_skills=True,
                     remote=item.get("jobLocationType") == "TELECOMMUTE",
                     posted_date=item.get("datePosted"),
                 ))
@@ -888,9 +902,9 @@ def _scan_for_jobs(data: Any, source_url: str, source_name: str = "unknown") -> 
                 company=company,
                 location=str(data.get("location") or data.get("city") or ""),
                 url=str(data.get("url") or data.get("job_url") or data.get("apply_url") or source_url),
-                description=_html_to_text(desc),
+                description=desc,
                 source=source_name,
-                skills=_extract_basic_skills(desc),
+                extract_skills=True,
             ))
         else:
             for v in data.values():

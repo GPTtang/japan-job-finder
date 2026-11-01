@@ -64,13 +64,17 @@ def format_job_report(profile: Dict[str, object], jobs: List[Dict[str, object]],
         if job.get("required_jlpt"):
             badges.append(f"日語{job['required_jlpt']}+")
         badge_str = f" [{' | '.join(badges)}]" if badges else ""
+        guard_verdict = str(job.get("guard") or "clean")
+        warn_str = " ⚠" if guard_verdict != "clean" else ""
 
-        lines.append(f"### {idx}. {job.get('company', 'Unknown')} — {job.get('title', 'Untitled')}{badge_str}")
+        lines.append(f"### {idx}. {job.get('company', 'Unknown')} — {job.get('title', 'Untitled')}{badge_str}{warn_str}")
         lines.append(f"- 地点：{job.get('location', 'Unknown')}")
         lines.append(f"- 来源：{job.get('source', 'Unknown')}")
         if job.get("url"):
             lines.append(f"- 链接：{job.get('url')}")
         lines.append(f"- 匹配分：{job.get('match_score', 0)}")
+        if guard_verdict != "clean":
+            lines.append(f"- 内容安全：{guard_verdict}（该岗位文本含可疑内容，已清洗后评分，请人工核对原帖）")
         reasons = job.get("fit_reasons", []) or []
         gaps = job.get("gaps", []) or []
         if reasons:
