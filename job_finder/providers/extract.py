@@ -178,6 +178,7 @@ def extract_json_ld_jobpostings(html: str, base_url: str) -> List[Dict[str, Any]
                     extract_skills=True,
                     remote=item.get("jobLocationType") == "TELECOMMUTE",
                     posted_date=item.get("datePosted"),
+                    deadline=item.get("validThrough"),
                 ))
     return jobs
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from ..dates import normalize_date
 from ..guard import GuardResult, guard, guard_plain
 from .text import extract_basic_skills
 
@@ -47,6 +48,7 @@ def make_job(
     extract_skills: bool = False,
     remote: Optional[bool] = None,
     posted_date: Optional[str] = None,
+    deadline: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Build a job record.
 
@@ -75,5 +77,6 @@ def make_job(
         "skills": skills or [],
         "remote": remote,
         "posted_date": posted_date,
+        "deadline": normalize_date(deadline),
         "guard": GuardResult(text="", findings=findings).verdict,
     }

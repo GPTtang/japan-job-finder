@@ -17,7 +17,7 @@ from .rubric import DIMENSIONS, GATE_VALUES, GATES, band, overall_score
 MAX_ITEMS = 3
 MAX_TEXT_CHARS = 160
 _REVIEW_FLAG = "评审文本含可疑内容，已移除"
-_CARRIED = ("key", "title", "company", "location", "url", "source", "posted_date", "remote",
+_CARRIED = ("key", "title", "company", "location", "url", "source", "posted_date", "deadline", "remote",
             "skills", "rule_score", "guard")
 
 
@@ -118,14 +118,16 @@ def _item(job: Mapping[str, Any], review: Mapping[str, Any], today: date) -> Dic
     overall = overall_score(review["scores"])
     failed = [f"{gate}: {review['gate_notes'].get(gate) or '不满足'}"
               for gate, value in review["gates"].items() if value == "FAIL"]
-    expired, timing = freshness_flags(job.get("posted_date"), review["deadline"], today)
+    # A deadline read from the posting's own markup outranks the reviewer's guess.
+    deadline = job.get("deadline") or review["deadline"]
+    expired, timing = freshness_flags(job.get("posted_date"), deadline, today)
     if expired:
-        failed.append(f"已过截止日 {review['deadline']}")
+        failed.append(f"已过截止日 {deadline}")
     item = {key: job.get(key) for key in _CARRIED}
     item.update(
         scores=review["scores"], overall=overall, band=band(overall), gates=review["gates"],
         gate_notes=review["gate_notes"],
-        strengths=review["strengths"], gaps=review["gaps"], deadline=review["deadline"],
+        strengths=review["strengths"], gaps=review["gaps"], deadline=deadline,
         flags=_flags(job, review) + timing, excluded_reasons=failed,
     )
     return item

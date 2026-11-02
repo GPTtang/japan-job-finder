@@ -5,6 +5,7 @@ import hashlib
 import re
 from typing import Any, Dict, List, Mapping, Sequence
 
+from ..dates import normalize_date
 from .rubric import render_rubric
 
 PACKET_VERSION = 1
@@ -56,6 +57,7 @@ def _entry(job: Mapping[str, Any], max_chars: int) -> Dict[str, Any]:
         "url": str(job.get("url") or ""),
         "source": str(job.get("source") or ""),
         "posted_date": job.get("posted_date"),
+        "deadline": normalize_date(job.get("deadline")),
         "remote": job.get("remote"),
         "skills": [str(s) for s in (job.get("skills") or [])],
         "rule_score": float(job.get("match_score") or 0.0),

@@ -59,8 +59,8 @@ class TestRenderBatchPrompt:
         _, lines = data_lines(render_batch_prompt(p, p["jobs"]))
         records = [json.loads(line) for line in lines]
         assert [r["title"] for r in records] == ["Job 0", "Job 1", "Job 2"]
-        assert all(set(r) == {"key", "title", "company", "location", "source", "posted_date", "remote",
-                              "skills", "guard", "description", "description_truncated"} for r in records)
+        assert all(set(r) == {"key", "title", "company", "location", "source", "posted_date", "deadline",
+                              "remote", "skills", "guard", "description", "description_truncated"} for r in records)
 
     def test_url_and_rule_score_are_withheld_from_reviewers(self):
         p = packet(1)

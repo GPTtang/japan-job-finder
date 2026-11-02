@@ -17,8 +17,8 @@ DEFAULT_BATCH_SIZE = 5
 PACKET_FILE = "packet.json"
 # What a reviewer may see. The URL and the rule score are withheld on purpose: the reviewer
 # cannot visit links, and an unanchored score keeps its judgement independent.
-REVIEW_FIELDS = ("key", "title", "company", "location", "source", "posted_date", "remote",
-                 "skills", "guard", "description", "description_truncated")
+REVIEW_FIELDS = ("key", "title", "company", "location", "source", "posted_date", "deadline",
+                 "remote", "skills", "guard", "description", "description_truncated")
 
 _HEAD = """\
 You are a job-posting reviewer. Score each posting for the candidate below.

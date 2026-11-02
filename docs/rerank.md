@@ -14,7 +14,7 @@ Copy `agents/posting-scorer.md` to `~/.claude/agents/` to get a reviewer limited
 
 ## Rubric
 technical 30 · experience 25 · language 20 · career 25. Bands: ≥75 strong, 60-74 good, 45-59 moderate, 30-44 weak, <30 poor.
-Gates `location`, `language`, `visa`: **FAIL** excludes a posting, **FLAG** keeps it with a ⚠. Postings older than 30 days get a ⚠, a deadline within 7 days gets 🔥, and a passed deadline excludes. Scores come from posting text only; they are triage, not a verdict.
+Gates `location`, `language`, `visa`: **FAIL** excludes a posting, **FLAG** keeps it with a ⚠. Postings older than 30 days get a ⚠, a deadline within 7 days gets 🔥, and a passed deadline excludes. A deadline read from the posting's own JSON-LD `validThrough` takes precedence over the reviewer's guess. Scores come from posting text only; they are triage, not a verdict.
 
 ## Security model
 Job text is attacker-controlled, so it is treated as data at every step:
