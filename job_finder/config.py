@@ -4,19 +4,11 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-SUPPORTED_PROVIDERS = {
-    "greenhouse": ["token"],
-    "lever": ["company"],
-    "ashby": ["board"],
-    # Static HTML fetch + JSON-LD extraction (fast, no browser required)
-    "company_site": ["url"],
-    # Headless Playwright fetch — use for SPA/React/Vue/Next.js/Nuxt career pages
-    # Requires: pip install playwright && playwright install chromium
-    "browser_site": ["url"],
-    # Built-in aggregators (static fetch + automatic browser fallback)
-    "japan_dev": [],
-    "gaijinpot": [],
-    "tokyodev": [],
+from .providers import PROVIDERS
+
+# Derived from the provider registry so a new provider is registered in one place only.
+SUPPORTED_PROVIDERS: Dict[str, List[str]] = {
+    name: list(provider.required) for name, provider in PROVIDERS.items()
 }
 
 SUPPORTED_FILTER_FIELDS = {
@@ -167,10 +159,19 @@ def validate_config(config: Dict[str, Any]) -> Tuple[List[str], List[str]]:
             if not isinstance(value, str) or not value.strip():
                 errors.append(f"`sources[{i}].{field}` 对于 provider={provider} 是必填字符串。")
 
+        if "enabled" in source and not isinstance(source["enabled"], bool):
+            errors.append(f"`sources[{i}].enabled` 必须是布尔值。")
+
+        provider_spec = PROVIDERS[provider]
+        if provider_spec.validate:
+            for field, problem in provider_spec.validate(source):
+                errors.append(f"`sources[{i}].{field}` {problem}")
+
         _validate_filters(source.get("filters"), i, errors, warnings)
 
         unknown_fields = sorted(
-            k for k in set(source.keys()) - set(required_fields) - {"provider", "filters"}
+            k for k in set(source.keys()) - set(required_fields) - set(provider_spec.optional)
+            - {"provider", "filters", "enabled"}
             if not k.startswith("_")
         )
         if unknown_fields:

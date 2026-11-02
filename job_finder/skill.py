@@ -8,6 +8,7 @@ from .fetchers import fetch_all
 from .formatter import build_report_payload, format_job_report
 from .matcher import rank_jobs
 from .parsers import parse_user_query
+from .rerank.packet import DEFAULT_TOP_K, build_packet
 
 
 def _config_error_response(profile: dict, errors: list[str], warnings: list[str] | None = None) -> dict:
@@ -22,13 +23,8 @@ def _config_error_response(profile: dict, errors: list[str], warnings: list[str]
     }
 
 
-def run_job_finder(
-    query: str,
-    top_n: int = 5,
-    config_path: str | None = None,
-    priority_path: str | None = None,
-) -> dict:
-    profile = parse_user_query(query)
+def _gather(profile: dict, config_path: str | None, priority_path: str | None) -> dict:
+    """Load config, fetch every source and rule-rank nothing yet; or return a config error."""
     try:
         config = load_config(config_path)
     except FileNotFoundError as exc:
@@ -41,29 +37,16 @@ def run_job_finder(
             ],
         )
     except json.JSONDecodeError as exc:
-        return _config_error_response(
-            profile,
-            [f"配置 JSON 解析失败：{exc}"],
-        )
+        return _config_error_response(profile, [f"配置 JSON 解析失败：{exc}"])
     except OSError as exc:
-        return _config_error_response(
-            profile,
-            [f"读取配置文件失败：{exc}"],
-        )
+        return _config_error_response(profile, [f"读取配置文件失败：{exc}"])
     errors, warnings = validate_config(config)
 
     if errors:
         return _config_error_response(profile, errors, warnings)
 
-    dynamic_sources = apply_dynamic_filters_to_sources(
-        config.get("sources", []),
-        profile,
-    )
-
-    fetched = fetch_all(
-        dynamic_sources,
-        fetch_options=config.get("fetch_options", {}),
-    )
+    dynamic_sources = apply_dynamic_filters_to_sources(config.get("sources", []), profile)
+    fetched = fetch_all(dynamic_sources, fetch_options=config.get("fetch_options", {}))
     issues = fetched.get("issues", [])
     if warnings:
         issues = [
@@ -77,14 +60,51 @@ def run_job_finder(
             }
             for warning in warnings
         ] + issues
+    return {
+        "ok": True,
+        "jobs": fetched.get("jobs", []),
+        "issues": issues,
+        "effective_sources": dynamic_sources,
+        "priority_cfg": load_priority_companies(priority_path),
+    }
 
-    priority_cfg = load_priority_companies(priority_path)
-    ranked = rank_jobs(profile, fetched.get("jobs", []), top_n=top_n, priority_cfg=priority_cfg)
-    payload = build_report_payload(profile, ranked, issues=issues)
+
+def run_job_finder(
+    query: str,
+    top_n: int = 5,
+    config_path: str | None = None,
+    priority_path: str | None = None,
+    profile: dict | None = None,
+) -> dict:
+    profile = profile if profile is not None else parse_user_query(query)
+    gathered = _gather(profile, config_path, priority_path)
+    if not gathered["ok"]:
+        return gathered
+
+    ranked = rank_jobs(profile, gathered["jobs"], top_n=top_n, priority_cfg=gathered["priority_cfg"])
+    payload = build_report_payload(profile, ranked, issues=gathered["issues"])
     payload["ok"] = True
     payload["profile"] = profile
-    payload["effective_sources"] = dynamic_sources
+    payload["effective_sources"] = gathered["effective_sources"]
     return payload
+
+
+def prepare_review(
+    query: str,
+    top_k: int = DEFAULT_TOP_K,
+    config_path: str | None = None,
+    priority_path: str | None = None,
+    profile: dict | None = None,
+) -> dict:
+    """Fetch and rule-rank, then package the best ``top_k`` postings for reviewer subagents."""
+    profile = profile if profile is not None else parse_user_query(query)
+    gathered = _gather(profile, config_path, priority_path)
+    if not gathered["ok"]:
+        return gathered
+
+    ranked = rank_jobs(profile, gathered["jobs"], top_n=top_k, priority_cfg=gathered["priority_cfg"])
+    packet = {**build_packet(profile, ranked), "fetch_issues": gathered["issues"]}
+    return {"ok": True, "packet": packet, "effective_sources": gathered["effective_sources"]}
 
 
 def job_finder(
@@ -92,8 +112,11 @@ def job_finder(
     top_n: int = 5,
     config_path: str | None = None,
     priority_path: str | None = None,
+    profile: dict | None = None,
 ) -> str:
-    payload = run_job_finder(query, top_n=top_n, config_path=config_path, priority_path=priority_path)
+    payload = run_job_finder(
+        query, top_n=top_n, config_path=config_path, priority_path=priority_path, profile=profile,
+    )
     if not payload.get("ok", False):
         message = "# 配置错误\n\n"
         message += "以下配置问题需要先修复：\n"

@@ -2,33 +2,15 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
 
-# Signals in job text that indicate Chinese speaker is preferred/advantaged
-_CHINESE_ADVANTAGE_SIGNALS = [
-    "中国語", "chinese", "中文", "mandarin",
-    "中国系", "中国人", "华人", "オフショア", "offshore",
-    "bridge se", "ブリッジse", "ブリッジエンジニア",
-    "大連", "上海", "北京", "深圳", "沈阳",
-    "dalian", "shanghai", "beijing", "shenzhen",
-]
-
-# Signals that indicate Bridge SE / offshore coordination role
-_BRIDGE_SE_SIGNALS = [
-    "bridge se", "ブリッジse", "ブリッジエンジニア", "bridge engineer",
-    "オフショア", "offshore", "中国語", "対中", "日中",
-    "中国拠点", "中国チーム", "中国開発",
-]
-
-# JLPT requirement patterns in job text
-_JLPT_REQUIREMENT_MAP = {
-    "n1": "N1", "jlpt n1": "N1", "日本語n1": "N1", "n1以上": "N1",
-    "native japanese": "N1", "日本語ネイティブ": "N1",
-    "n2": "N2", "jlpt n2": "N2", "日本語n2": "N2", "n2以上": "N2",
-    "ビジネス日本語": "N2", "business japanese": "N2",
-    "n3": "N3", "jlpt n3": "N3", "n3以上": "N3",
-    "日常会話": "N3", "conversational japanese": "N3",
-}
-
-_JLPT_RANK = {"N1": 1, "N2": 2, "N3": 3, None: 99}
+from .signals import (
+    BRIDGE_ONLY_SIGNALS,
+    BRIDGE_SE_SIGNALS,
+    CHINESE_ADVANTAGE_SIGNALS,
+    JLPT_RANK,
+    JLPT_REQUIREMENT_MAP,
+    has_any_term,
+    has_term,
+)
 
 
 class MatchRecord(dict):
@@ -57,28 +39,25 @@ def _overlap(a: List[str], b: List[str]) -> float:
 
 def _detect_chinese_advantage(job_text: str) -> bool:
     """Return True if the job description signals Chinese speaker is preferred."""
-    t = job_text.lower()
-    return any(sig.lower() in t for sig in _CHINESE_ADVANTAGE_SIGNALS)
+    return has_any_term(job_text, CHINESE_ADVANTAGE_SIGNALS)
 
 
 def _detect_bridge_se(job_text: str) -> bool:
     """Return True if the role involves Bridge SE / offshore coordination."""
-    t = job_text.lower()
-    return any(sig.lower() in t for sig in _BRIDGE_SE_SIGNALS)
+    return has_any_term(job_text, BRIDGE_SE_SIGNALS)
 
 
 def _detect_jlpt_requirement(job_text: str) -> str | None:
     """Extract the minimum JLPT level required from job text."""
-    t = job_text.lower()
-    found = []
-    for pattern, level in _JLPT_REQUIREMENT_MAP.items():
-        if pattern.lower() in t:
-            found.append(level)
+    found = [
+        level for pattern, level in JLPT_REQUIREMENT_MAP.items()
+        if has_term(job_text, pattern)
+    ]
     if not found:
         return None
     # Return the strictest (most demanding) requirement found so the penalty is
     # applied correctly when a job signals e.g. both N2 and N3 in the same text.
-    return min(found, key=lambda x: _JLPT_RANK[x])
+    return min(found, key=lambda x: JLPT_RANK[x])
 
 
 def _check_priority(
@@ -161,7 +140,8 @@ def score_job(
 
     # ── Bonus: Bridge SE role (high value for bilingual candidates) ───
     is_bridge_se = _detect_bridge_se(job_text)
-    bridge_bonus = 0.10 if (is_chinese_speaker and is_bridge_se) else 0.0
+    bridge_specific = has_any_term(job_text, BRIDGE_ONLY_SIGNALS)
+    bridge_bonus = 0.10 if (is_chinese_speaker and bridge_specific) else 0.0
 
     # ── Bonus: priority company (user-specified or Chinese IT 乙方) ───
     is_priority, priority_boost, priority_label = _check_priority(job, priority_cfg or {})
@@ -170,7 +150,7 @@ def score_job(
     required_jlpt = _detect_jlpt_requirement(job_text)
     jlpt_penalty = 0.0
     if required_jlpt and candidate_jlpt:
-        if _JLPT_RANK[required_jlpt] < _JLPT_RANK[candidate_jlpt]:
+        if JLPT_RANK[required_jlpt] < JLPT_RANK[candidate_jlpt]:
             jlpt_penalty = 0.20  # job requires better Japanese than candidate has
 
     # ── Final score ───────────────────────────────────────────────────

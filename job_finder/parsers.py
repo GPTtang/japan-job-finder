@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict
+
+from .signals import has_any_term, has_term
 
 
 # Roles: English + Japanese variants
@@ -58,20 +60,11 @@ _JLPT_MAP = {
     "conversational japanese": "N3", "日常会話": "N3",
 }
 
-# Chinese speaker advantage signals
-_CHINESE_SIGNALS = [
-    "中国語", "chinese", "中文", "mandarin", "普通话",
-    "中国系", "中国人", "华人", "オフショア", "offshore",
-    "bridge se", "ブリッジse", "ブリッジエンジニア",
-    "大連", "上海", "北京", "深圳", "沈阳", "dalian",
-]
-
-
 def parse_user_query(query: str) -> Dict[str, object]:
     text = query.strip()
     text_l = text.lower()
 
-    roles = [r for r in _ROLE_VOCAB if r.lower() in text_l]
+    roles = [r for r in _ROLE_VOCAB if has_term(text, r)]
 
     # Each group is a set of aliases for the same place.
     # When any alias is detected we add all canonical forms,
@@ -87,20 +80,20 @@ def parse_user_query(query: str) -> Dict[str, object]:
     seen_locs: set = set()
     location_hits = []
     for group in _LOCATION_GROUPS:
-        if any(alias.lower() in text_l for alias in group):
+        if has_any_term(text, group):
             for canonical in group:
                 if canonical.lower() not in seen_locs:
                     seen_locs.add(canonical.lower())
                     location_hits.append(canonical)
 
-    skills = [s for s in _SKILL_VOCAB if s.lower() in text_l]
+    skills = [s for s in _SKILL_VOCAB if has_term(text, s)]
 
     keyword_terms = list({
         t for t in _ROLE_VOCAB + _SKILL_VOCAB + [
             "startup", "product", "backend", "platform", "applied ai",
             "DX", "SES", "SIer", "consulting",
         ]
-        if t.lower() in text_l
+        if has_term(text, t)
     })
 
     remote_preference = None
@@ -112,11 +105,11 @@ def parse_user_query(query: str) -> Dict[str, object]:
     # JLPT level declared in query — prefer the highest explicit level found
     # (e.g. "I have N2, working towards N1" → N2 is the current cert)
     _JLPT_RANK_MAP = {"N1": 1, "N2": 2, "N3": 3}
-    jlpt_hits = [level for pattern, level in _JLPT_MAP.items() if pattern in text_l]
+    jlpt_hits = [level for pattern, level in _JLPT_MAP.items() if has_term(text, pattern)]
     jlpt_level = min(jlpt_hits, key=lambda x: _JLPT_RANK_MAP[x]) if jlpt_hits else None
 
     # Chinese speaker flag
-    is_chinese_speaker = any(sig in text_l for sig in [
+    is_chinese_speaker = has_any_term(text, [
         "chinese speaker", "中文母语", "native chinese", "中国人",
         "chinese native", "mandarin native",
     ])
